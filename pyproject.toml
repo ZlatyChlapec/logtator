@@ -1,6 +1,6 @@
 [project]
 name = "logtator"
-version = "0.1.0"
+version = "0.1.1"
 description = "logging dictator which makes logging just work"
 authors = [
     {name = "Martin Zaťko"},
