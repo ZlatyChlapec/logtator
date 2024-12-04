@@ -1,5 +1,6 @@
 import logging
 import types
+import typing
 import warnings
 
 from . import _loggers
@@ -41,6 +42,34 @@ def _patch_warning(settings: _settings.Base) -> None:
         warnings.filters = []
 
 
+def _log_known_loggers() -> None:
+    loggers: typing.List[str | typing.Dict[str, typing.Any]] = []
+    unique_loggers = set()
+
+    for logger in logging.Logger.manager.loggerDict.values():
+        if isinstance(logger, logging.PlaceHolder):
+            continue
+        main_logger = logger.name.split(".")[0]
+        if main_logger in unique_loggers:
+            continue
+        if log.level <= logging.DEBUG:
+            loggers.append(
+                {
+                    "name": logger.name,
+                    "level": logger.level,
+                    "propagate": logger.propagate,
+                    "disabled": logger.disabled,
+                    "handlers": logger.handlers,
+                }
+            )
+            continue
+        loggers.append(main_logger)
+        unique_loggers.add(main_logger)
+
+    loggers.sort(key=lambda x: x["name"] if isinstance(x, dict) else x)
+    log.info("known-loggers", loggers=loggers)
+
+
 def patch(settings: _settings.Base) -> None:
     if logging.getLoggerClass() is _loggers.Logtator:
         log.debug("already-patched")
@@ -53,20 +82,4 @@ def patch(settings: _settings.Base) -> None:
 
     _patch_warning(settings)
     _patch_loggers(settings)
-
-    log.info(
-        "known-loggers",
-        loggers=[
-            {
-                "name": logger.name,
-                "level": logger.level,
-                "propagate": logger.propagate,
-                "disabled": logger.disabled,
-                "handlers": logger.handlers,
-            }
-            if log.level == logging.DEBUG
-            else logger.name
-            for logger in logging.Logger.manager.loggerDict.values()
-            if not isinstance(logger, logging.PlaceHolder)
-        ],
-    )
+    _log_known_loggers()
