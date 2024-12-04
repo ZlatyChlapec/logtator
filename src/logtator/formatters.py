@@ -49,7 +49,7 @@ class Json(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         record_dict = record.__dict__
-        self._adjust_dict(record, record_dict)
+        record_dict = self._adjust_dict(record, record_dict)
 
         if self.add_datadog_fields:
             Json._add_datadog_fields(record_dict)
@@ -59,7 +59,7 @@ class Json(logging.Formatter):
 
     def _adjust_dict(
         self, record: logging.LogRecord, record_dict: typing.Dict[str, typing.Any]
-    ) -> None:
+    ) -> typing.Dict[str, typing.Any]:
         if self.nest_record:
             record_dict = {"record": record.__dict__}
         record_dict["message"] = record.getMessage()
@@ -72,6 +72,7 @@ class Json(logging.Formatter):
             record_dict.update(
                 record_dict.get("record", record_dict).pop("kwargs", {}) or {}
             )
+        return record_dict
 
     @staticmethod
     def _add_datadog_fields(record_dict: typing.Dict[str, typing.Any]) -> None:
